@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>聊天室</title>
+    <style>
+        body { font-family: Arial; max-width: 600px; margin: 20px auto; }
+        #messages { border: 1px solid #ccc; height: 300px; overflow-y: scroll; padding: 10px; margin-bottom: 10px; }
+        #input { width: 80%; padding: 8px; }
+        button { padding: 8px 20px; }
+    </style>
+</head>
+<body>
+    <h2>在线聊天室</h2>
+    <div id="messages"></div>
+    <input type="text" id="input" placeholder="输入消息...">
+    <button onclick="sendMsg()">发送</button>
+
+    <script>
+        const username = prompt("Enter your name:") || "Anonymous";
+        let lastMsgCount = 0;  // 记录上次显示了多少条
+
+        // 定时拉取新消息
+        function poll() {
+            setTimeout(() => {
+                fetch('/getmsg')
+                    .then(r => r.text())
+                    .then(allMsg => {
+                        const msgs = allMsg.split('\n').filter(m => m);
+                        // 只追加新的消息
+                        for (let i = lastMsgCount; i < msgs.length; i++) {
+                            const div = document.createElement('div');
+                            div.innerText = msgs[i];
+                            document.getElementById('messages').appendChild(div);
+                        }
+                        lastMsgCount = msgs.length;
+                        document.getElementById('messages').scrollTop = 100000;
+                        poll();
+                    });
+            }, 1000);
+        }
+        poll();
+
+        function sendMsg() {
+            const input = document.getElementById('input');
+            const text = input.value.trim();
+            if (!text) return;
+            fetch('/sendmsg', {
+                method: 'POST',
+                body: username + ": " + text
+            });
+            input.value = '';
+        }
+    </script>
+</body>
+</html>
